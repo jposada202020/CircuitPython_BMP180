@@ -1,8 +1,7 @@
 Introduction
 ============
-NON-OFFICIAL CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor adapted from `CircuitPython driver for BMP280 <https://github.com/adafruit/Adafruit_CircuitPython_BMP280/>`
-
-NON-TESTED over SPI interface but should work anyway ;)
+CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor adapted from `CircuitPython driver for BMP280 <https://github.com/adafruit/Adafruit_CircuitPython_BMP280/>`
+Derived from the work of BadTigrou
 
 Installation and Dependencies
 =============================
@@ -11,48 +10,68 @@ This driver depends on:
 
 * `Adafruit CircuitPython <https://github.com/adafruit/circuitpython>`_
 * `Bus Device <https://github.com/adafruit/Adafruit_CircuitPython_BusDevice>`_
+* `Register <https://github.com/adafruit/Adafruit_CircuitPython_Register>`_
 
-Please ensure all dependencies are available on the CircuitPython filesystem.
-This is easily achieved by downloading
-`the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit_CircuitPython_Bundle>`_.
 
-Installing from PyPI
---------------------
+On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
+PyPI <https://pypi.org/project/circuitpython-bmp180/>`_.
+To install for current user:
 
-Need to create a package on PYPi for easy install.
+.. code-block:: shell
 
-.. code-block:: bash
-	
-	git clone https://github.com/BadTigrou/Adafruit_CircuitPython_BMP180.git
-	cd Adafruit_CircuitPython_BMP180
-	sudo python3 setup.py install
+    pip3 install circuitpython-bmp180
+
+To install system-wide (this may be required in some cases):
+
+.. code-block:: shell
+
+    sudo pip3 install circuitpython-bmp180
+
+To install in a virtual environment in your current project:
+
+.. code-block:: shell
+
+    mkdir project-name && cd project-name
+    python3 -m venv .venv
+    source .env/bin/activate
+    pip3 install circuitpython-qmc5883l
+
+Installing to a Connected CircuitPython Device with Circup
+==========================================================
+
+Make sure that you have ``circup`` installed in your Python environment.
+Install it with the following command if necessary:
+
+.. code-block:: shell
+
+    pip3 install circup
+
+With ``circup`` installed and your CircuitPython device connected use the
+following command to install:
+
+.. code-block:: shell
+
+    circup install bmp180
+
+Or the following command to update an existing version:
+
+.. code-block:: shell
+
+    circup update
 
 Usage Example
 =============
 
-.. code-block:: python
+Take a look a the ``bmp180_simpletest.py`` in the examples directory
 
-    import board
-    import digitalio
-    import busio
-    import time
-    from adafruit_bmp180 import adafruit_bmp180
+Documentation
+=============
+API documentation for this library can be found on `Read the Docs <https://circuitpython-qmc5883l.readthedocs.io/>`_.
 
-    # Create library object using our Bus I2C port
-    i2c = busio.I2C(board.SCL, board.SDA)
-    bmp180 = adafruit_bmp180.Adafruit_BMP180_I2C(i2c)
+Contributing
+============
 
-    # OR create library object using our Bus SPI port
-    #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-    #bmp_cs = digitalio.DigitalInOut(board.D10)
-    #bmp180 = adafruit_bmp180.Adafruit_BMP180_SPI(spi, bmp_cs)
-
-    # change this to match the location's pressure (hPa) at sea level
-    bmp180.seaLevelhPa = 1013.25
-
-    while True:
-        print("\nTemperature: %0.1f C" % bmp180.temperature)
-        print("Pressure: %0.1f hPa" % bmp180.pressure)
-        print("Altitude = %0.2f meters" % bmp180.altitude)
-        time.sleep(2)
+Contributions are welcome! Please read our `Code of Conduct
+<https://github.com/jposada202020/CircuitPython_bmp180/blob/HEAD/CODE_OF_CONDUCT.md>`_
+before contributing to help this project stay welcoming.
 

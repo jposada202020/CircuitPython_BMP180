@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020 BadTigrou
 # SPDX-FileCopyrightText: Copyright (c) 2023 Jose D. Montoya
-
+#
+# SPDX-License-Identifier: MIT
 """
 `bmp180` - Temperature & Barometic Pressure Sensor
 ===============================================================================
@@ -9,8 +10,10 @@ CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor
 
 * Author(s): BadTigrou, Jose D. Montoya
 """
-import math
+# pylint: disable=consider-using-from-import, import-outside-toplevel, unused-import
+
 from time import sleep
+
 try:
     import struct
 except ImportError:
@@ -22,10 +25,10 @@ __repo__ = "https://github.com/jposada202020/CircuitPython_BMP180.git"
 
 _CHIP_ID = const(0x55)
 
-_REGISTER_CHIPID    = const(0xD0)
+_REGISTER_CHIPID = const(0xD0)
 _REGISTER_SOFTRESET = const(0xE0)
-_REGISTER_CONTROL   = const(0xF4)
-_REGISTER_DATA      = const(0xF6)
+_REGISTER_CONTROL = const(0xF4)
+_REGISTER_DATA = const(0xF6)
 
 """calibration coefficients register"""
 _REGISTER_AC1 = const(0xAA)
@@ -34,58 +37,66 @@ _REGISTER_AC3 = const(0xAE)
 _REGISTER_AC4 = const(0xB0)
 _REGISTER_AC5 = const(0xB2)
 _REGISTER_AC6 = const(0xB4)
-_REGISTER_B1  = const(0xB6)
-_REGISTER_B2  = const(0xB8)
-_REGISTER_MB  = const(0xBA)
-_REGISTER_MC  = const(0xBC)
-_REGISTER_MD  = const(0xBE)
+_REGISTER_B1 = const(0xB6)
+_REGISTER_B2 = const(0xB8)
+_REGISTER_MB = const(0xBA)
+_REGISTER_MC = const(0xBC)
+_REGISTER_MD = const(0xBE)
 
 _BMP180_PRESSURE_MIN_HPA = const(300)
 _BMP180_PRESSURE_MAX_HPA = const(1100)
 
 
 """oversampling values for temperature, pressure, and humidity"""
-TEMPERATURE_CMD           = const(0x2E)
-PRESSURE_OVERSAMPLING_X1  = const(0x01)
-PRESSURE_OVERSAMPLING_X2  = const(0x02)
-PRESSURE_OVERSAMPLING_X4  = const(0x03)
-PRESSURE_OVERSAMPLING_X8  = const(0x04)
+TEMPERATURE_CMD = const(0x2E)
+PRESSURE_OVERSAMPLING_X1 = const(0x01)
+PRESSURE_OVERSAMPLING_X2 = const(0x02)
+PRESSURE_OVERSAMPLING_X4 = const(0x03)
+PRESSURE_OVERSAMPLING_X8 = const(0x04)
 
-_BMP180_PRESSURE_CMD = {PRESSURE_OVERSAMPLING_X1:0x34, PRESSURE_OVERSAMPLING_X2:0x74, PRESSURE_OVERSAMPLING_X4:0xB4, PRESSURE_OVERSAMPLING_X8:0xF4}
+_BMP180_PRESSURE_CMD = {
+    PRESSURE_OVERSAMPLING_X1: 0x34,
+    PRESSURE_OVERSAMPLING_X2: 0x74,
+    PRESSURE_OVERSAMPLING_X4: 0xB4,
+    PRESSURE_OVERSAMPLING_X8: 0xF4,
+}
 
 
 """mode values"""
-MODE_ULTRALOWPOWER  = const(0x00)
-MODE_STANDARD       = const(0x01)
-MODE_HIGHRES        = const(0x02)
-MODE_ULTRAHIGHRES   = const(0x03)
+MODE_ULTRALOWPOWER = const(0x00)
+MODE_STANDARD = const(0x01)
+MODE_HIGHRES = const(0x02)
+MODE_ULTRAHIGHRES = const(0x03)
 
 _BMP180_MODES = (MODE_ULTRALOWPOWER, MODE_STANDARD, MODE_HIGHRES, MODE_ULTRAHIGHRES)
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-instance-attributes, too-few-public-methods
+
+
 class BMP180:
-    """Base BMP180 object. Use `Adafruit_BMP180_I2C`  instead of this. This
-       checks the BMP180 was found, reads the coefficients and enables the sensor for continuous
-       reads"""
+    """Base BMP180 object. Use :class:`BMP180_I2C`  instead of this. This
+    checks the BMP180 was found, reads the coefficients and enables the sensor for continuous
+    reads"""
+
     def __init__(self):
         # Check device ID.
         chip_id = self._read_byte(_REGISTER_CHIPID)
         if _CHIP_ID != chip_id:
-            raise RuntimeError('Failed to find BMP180! Chip ID 0x%x' % chip_id)
-        #Set some reasonable defaults.
+            raise RuntimeError("Failed to find BMP180! Chip ID 0x%x" % chip_id)
+        # Set some reasonable defaults.
         self._oversampling_setting = PRESSURE_OVERSAMPLING_X8
         self._mode = MODE_HIGHRES
 
         self._reset()
-        
+
         self._read_coefficients()
-       
+
         self.sea_level_pressure = 1013.25
 
     @property
     def temperature(self):
         """The compensated temperature in Celsius."""
-        UT = self._read_raw_temperature()    
+        UT = self._read_raw_temperature()
         X1 = int(((UT - self._AC6) * self._AC5) >> 15)
         X2 = int((self._MC << 11) / (X1 + self._MD))
         B5 = X1 + X2
@@ -93,16 +104,18 @@ class BMP180:
         return temp
 
     def _read_raw_temperature(self):
-        self._write_register_byte(_REGISTER_CONTROL,TEMPERATURE_CMD)
+        self._write_register_byte(_REGISTER_CONTROL, TEMPERATURE_CMD)
         sleep(0.005)  # Wait 5ms
         return self._readU16(_REGISTER_DATA)
 
     @property
     def altitude(self):
-        """The altitude based on the sea level pressure (`sea_level_pressure`) - which you must
-           enter ahead of time)"""
-        altitude = 44330.0 * (1.0 - pow(self.pressure / self.sea_level_pressure, 0.1903))        
-        return round(altitude,1)
+        """The altitude based on the sea level pressure - which you must
+        enter ahead of time)"""
+        altitude = 44330.0 * (
+            1.0 - pow(self.pressure / self.sea_level_pressure, 0.1903)
+        )
+        return round(altitude, 1)
 
     @property
     def pressure(self):
@@ -126,7 +139,7 @@ class BMP180:
         B4 = int((self._AC4 * (X3 + 32768)) >> 15)
         B7 = int((UP - B3) * (50000 >> self._mode))
 
-        if (B7 < 0x80000000):
+        if B7 < 0x80000000:
             p = int((B7 * 2) / B4)
         else:
             p = int((B7 / B4) * 2)
@@ -136,7 +149,6 @@ class BMP180:
         X2 = int((-7357 * p) >> 16)
 
         return int(p + ((X1 + X2 + 3791) >> 4)) / 100
-  
 
     def _read_raw_pressure(self):
 
@@ -152,16 +164,15 @@ class BMP180:
             sleep(0.005)
 
         msb = self._read_byte(_REGISTER_DATA)
-        lsb = self._read_byte(_REGISTER_DATA+1)
-        xlsb = self._read_byte(_REGISTER_DATA+2)
+        lsb = self._read_byte(_REGISTER_DATA + 1)
+        xlsb = self._read_byte(_REGISTER_DATA + 2)
 
         return ((msb << 16) + (lsb << 8) + xlsb) >> (8 - self._mode)
-
 
     def _reset(self):
         """Soft reset the sensor"""
         self._write_register_byte(_REGISTER_SOFTRESET, 0xB6)
-        sleep(0.004)  #Datasheet says 2ms.  Using 4ms just to be safe
+        sleep(0.004)  # Datasheet says 2ms.  Using 4ms just to be safe
 
     @property
     def mode(self):
@@ -176,7 +187,7 @@ class BMP180:
         print("as")
         print(value)
         if not value in _BMP180_MODES:
-            raise ValueError('Mode \'%s\' not supported' % (value))
+            raise ValueError("Mode '%s' not supported" % (value))
         self._mode = value
 
     @property
@@ -191,14 +202,14 @@ class BMP180:
     def oversampling_setting(self, value):
         print("oss")
         if not value in _BMP180_PRESSURE_CMD:
-            raise ValueError('Overscan value \'%s\' not supported' % (value))
+            raise ValueError("Overscan value '%s' not supported" % (value))
         self._overscan_temperature = value
 
     def _read_coefficients(self):
         """Read & save the calibration coefficients"""
 
         self._AC1 = self._readS16(_REGISTER_AC1)
-        self._AC2 = self._readS16(_REGISTER_AC2) 
+        self._AC2 = self._readS16(_REGISTER_AC2)
         self._AC3 = self._readS16(_REGISTER_AC3)
         self._AC4 = self._readU16(_REGISTER_AC4)
         self._AC5 = self._readU16(_REGISTER_AC5)
@@ -208,7 +219,7 @@ class BMP180:
         self._MB = self._readS16(_REGISTER_MB)
         self._MC = self._readS16(_REGISTER_MC)
         self._MD = self._readS16(_REGISTER_MD)
-        
+
         """print(self._AC1)
         print(self._AC2)
         print(self._AC3)
@@ -226,13 +237,14 @@ class BMP180:
         """Read a byte register value and return it"""
         return self._read_register(register, 1)[0]
 
-    def _readS16(self,register):
+    def _readS16(self, register):
         msb = self._read_byte(register)
-        if msb > 127: msb -= 256
-        return  msb * 256 + self._read_byte(register+1)
+        if msb > 127:
+            msb -= 256
+        return msb * 256 + self._read_byte(register + 1)
 
     def _readU16(self, register):
-        return self._read_byte(register) * 256 + self._read_byte(register+1)
+        return self._read_byte(register) * 256 + self._read_byte(register + 1)
 
     def _read_register(self, register, length):
         """Low level register reading, not implemented in base class"""
@@ -242,11 +254,14 @@ class BMP180:
         """Low level register writing, not implemented in base class"""
         raise NotImplementedError()
 
-class Adafruit_BMP180_I2C(Adafruit_BMP180): # pylint: disable=invalid-name
+
+class Adafruit_BMP180_I2C(BMP180):  # pylint: disable=invalid-name
     """Driver for I2C connected BMP180. Default address is 0x77 but another address can be passed
-       in as an argument"""
+    in as an argument"""
+
     def __init__(self, i2c, address=0x77):
         import adafruit_bus_device.i2c_device as i2c_device
+
         self._i2c = i2c_device.I2CDevice(i2c, address)
         super().__init__()
 
@@ -262,5 +277,3 @@ class Adafruit_BMP180_I2C(Adafruit_BMP180): # pylint: disable=invalid-name
         """Low level register writing over I2C, writes one 8-bit value"""
         with self._i2c as i2c:
             i2c.write(bytes([register & 0xFF, value & 0xFF]))
-
-

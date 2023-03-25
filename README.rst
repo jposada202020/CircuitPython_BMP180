@@ -1,6 +1,6 @@
 Introduction
 ============
-CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor adapted from `CircuitPython driver for BMP280 <https://github.com/adafruit/Adafruit_CircuitPython_BMP280/>`
+CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor adapted from CircuitPython driver for BMP280
 Derived from the work of BadTigrou
 
 Installation and Dependencies
@@ -74,4 +74,3 @@ Contributing
 Contributions are welcome! Please read our `Code of Conduct
 <https://github.com/jposada202020/CircuitPython_bmp180/blob/HEAD/CODE_OF_CONDUCT.md>`_
 before contributing to help this project stay welcoming.
-

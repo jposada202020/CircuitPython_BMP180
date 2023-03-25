@@ -1,7 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2020 BadTigrou
-# SPDX-FileCopyrightText: Copyright (c) 2023 Jose D. Montoya
+# SPDX-FileCopyrightText: Copyright (c) 2020 BadTigrou, 2023 Jose D. Montoya
 #
 # SPDX-License-Identifier: MIT
+
 """
 `bmp180` - Temperature & Barometic Pressure Sensor
 ===============================================================================

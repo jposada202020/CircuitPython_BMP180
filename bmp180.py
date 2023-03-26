@@ -13,17 +13,22 @@ CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor
 # pylint: disable=consider-using-from-import, import-outside-toplevel, unused-import
 
 from time import sleep
+from micropython import const
+from adafruit_register.i2c_struct import ROUnaryStruct, UnaryStruct, Struct
+import adafruit_bus_device.i2c_device as i2c_device
 
 try:
+    from busio import I2C
+    from typing_extensions import NoReturn
     import struct
 except ImportError:
-    import ustruct as struct
-from micropython import const
+    pass
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/jposada202020/CircuitPython_BMP180.git"
 
-_CHIP_ID = const(0x55)
+_CHIP_ID = const(0x255)
+_I2C_ADDR = const(0x77)
 
 _REGISTER_CHIPID = const(0xD0)
 _REGISTER_SOFTRESET = const(0xE0)
@@ -78,20 +83,31 @@ class BMP180:
     checks the BMP180 was found, reads the coefficients and enables the sensor for continuous
     reads"""
 
-    def __init__(self):
-        # Check device ID.
-        chip_id = self._read_byte(_REGISTER_CHIPID)
-        if _CHIP_ID != chip_id:
-            raise RuntimeError("Failed to find BMP180! Chip ID 0x%x" % chip_id)
-        # Set some reasonable defaults.
+    _device_id = ROUnaryStruct(_REGISTER_CHIPID, "H")
+    _reg_control = UnaryStruct(_REGISTER_CONTROL, "H")
+    _reg_soft_reset = UnaryStruct(_REGISTER_SOFTRESET, "H")
+    _regdata_MSB = UnaryStruct(_REGISTER_DATA, "H")
+    _regdata_LSB = UnaryStruct(_REGISTER_DATA + 1, "H")
+    _regdata_XLSB = UnaryStruct(_REGISTER_DATA + 2, "H")
+    _register_AC1 = UnaryStruct(_REGISTER_AC1, "H")
+
+    def __init__(self, i2c_bus: I2C, address: int = _I2C_ADDR) -> None:
+        self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
+        print(self._device_id)
+        if self._device_id != _CHIP_ID:
+            raise RuntimeError("Failed to find BMP180! Chip ID 0x%x" % self._device_id)
+
         self._oversampling_setting = PRESSURE_OVERSAMPLING_X8
         self._mode = MODE_HIGHRES
-
-        self._reset()
 
         self._read_coefficients()
 
         self.sea_level_pressure = 1013.25
+
+    def _reset(self):
+        """Soft reset the sensor"""
+        self._reg_soft_reset = 0xB6  # reset the device
+        sleep(0.004)  # Datasheet says 2ms.  Using 4ms just to be safe
 
     @property
     def temperature(self):
@@ -104,7 +120,7 @@ class BMP180:
         return temp
 
     def _read_raw_temperature(self):
-        self._write_register_byte(_REGISTER_CONTROL, TEMPERATURE_CMD)
+        self._reg_control = TEMPERATURE_CMD
         sleep(0.005)  # Wait 5ms
         return self._readU16(_REGISTER_DATA)
 
@@ -152,7 +168,7 @@ class BMP180:
 
     def _read_raw_pressure(self):
 
-        self._write_register_byte(_REGISTER_CONTROL, _BMP180_PRESSURE_CMD[self._mode])
+        self._reg_control = _BMP180_PRESSURE_CMD[self._mode]
 
         if self._mode == PRESSURE_OVERSAMPLING_X8:
             sleep(0.026)
@@ -163,29 +179,47 @@ class BMP180:
         else:
             sleep(0.005)
 
-        msb = self._read_byte(_REGISTER_DATA)
-        lsb = self._read_byte(_REGISTER_DATA + 1)
-        xlsb = self._read_byte(_REGISTER_DATA + 2)
+        msb = self._regdata_MSB & 0xFF
+        lsb = self._regdata_LSB & 0xFF
+        xlsb = self._regdata_XLSB & 0xFF
 
         return ((msb << 16) + (lsb << 8) + xlsb) >> (8 - self._mode)
-
-    def _reset(self):
-        """Soft reset the sensor"""
-        self._write_register_byte(_REGISTER_SOFTRESET, 0xB6)
-        sleep(0.004)  # Datasheet says 2ms.  Using 4ms just to be safe
 
     @property
     def mode(self):
         """
         Operation mode
         Allowed values are set in the MODE enum class
+
+        +----------------------------------------+-------------------------+
+        | Mode                                   | Value                   |
+        +========================================+=========================+
+        | :py:const:`bmp180.MODE_ULTRALOWPOWER`  | :py:const:`0x00`        |
+        +----------------------------------------+-------------------------+
+        | :py:const:`bmp180.MODE_STANDARD`       | :py:const:`0x01`        |
+        +----------------------------------------+-------------------------+
+        | :py:const:`bmp180.MODE_HIGHRES`        | :py:const:`0x02`        |
+        +----------------------------------------+-------------------------+
+        | :py:const:`bmp180.MODE_ULTRAHIGHRES`   | :py:const:`0x03`        |
+        +----------------------------------------+-------------------------+
+
+        Example
+        ---------------------
+
+        .. code-block:: python
+
+            i2c = board.I2C()
+            qmc = bmp180.BMP180(i2c)
+
+
+            bmp180.mode = bmp180.MODE_HIGHRES
+
         """
         return self._mode
 
     @mode.setter
     def mode(self, value):
-        print("as")
-        print(value)
+
         if not value in _BMP180_MODES:
             raise ValueError("Mode '%s' not supported" % (value))
         self._mode = value
@@ -220,19 +254,6 @@ class BMP180:
         self._MC = self._readS16(_REGISTER_MC)
         self._MD = self._readS16(_REGISTER_MD)
 
-        """print(self._AC1)
-        print(self._AC2)
-        print(self._AC3)
-        print(self._AC4)
-        print(self._AC5)
-        print(self._AC6)
-        print(self._B1)
-        print(self._B2)
-        print(self._MB)
-        print(self._MC)
-        print(self._MD)
-        """
-
     def _read_byte(self, register):
         """Read a byte register value and return it"""
         return self._read_register(register, 1)[0]
@@ -244,36 +265,13 @@ class BMP180:
         return msb * 256 + self._read_byte(register + 1)
 
     def _readU16(self, register):
+
         return self._read_byte(register) * 256 + self._read_byte(register + 1)
 
     def _read_register(self, register, length):
-        """Low level register reading, not implemented in base class"""
-        raise NotImplementedError()
-
-    def _write_register_byte(self, register, value):
-        """Low level register writing, not implemented in base class"""
-        raise NotImplementedError()
-
-
-class Adafruit_BMP180_I2C(BMP180):  # pylint: disable=invalid-name
-    """Driver for I2C connected BMP180. Default address is 0x77 but another address can be passed
-    in as an argument"""
-
-    def __init__(self, i2c, address=0x77):
-        import adafruit_bus_device.i2c_device as i2c_device
-
-        self._i2c = i2c_device.I2CDevice(i2c, address)
-        super().__init__()
-
-    def _read_register(self, register, length):
         """Low level register reading over I2C, returns a list of values"""
-        with self._i2c as i2c:
+        with self.i2c_device as i2c:
             i2c.write(bytes([register & 0xFF]))
             result = bytearray(length)
             i2c.readinto(result)
             return result
-
-    def _write_register_byte(self, register, value):
-        """Low level register writing over I2C, writes one 8-bit value"""
-        with self._i2c as i2c:
-            i2c.write(bytes([register & 0xFF, value & 0xFF]))

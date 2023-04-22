@@ -1,6 +1,28 @@
 Introduction
 ============
-CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor adapted from CircuitPython driver for BMP280
+
+.. image:: https://readthedocs.org/projects/circuitpython-bmp180/badge/?version=latest
+    :target: https://circuitpython-bmp180.readthedocs.io/
+    :alt: Documentation Status
+
+.. image:: https://github.com/jposada202020/CircuitPython_BMP180/workflows/Build%20CI/badge.svg
+    :target: https://github.com/jposada202020/CircuitPython_BMP180/actions
+    :alt: Build Status
+
+.. image:: https://img.shields.io/pypi/v/circuitpython-bmp180.svg
+    :alt: latest version on PyPI
+    :target: https://pypi.python.org/pypi/circuitpython-bmp180
+
+.. image:: https://static.pepy.tech/personalized-badge/circuitpython-bmp180?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Pypi%20Downloads
+    :alt: Total PyPI downloads
+    :target: https://pepy.tech/project/circuitpython-bmp180
+
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+    :alt: Code Style: Black
+
+CircuitPython driver from BMP180 Temperature and Barometric Pressure sensor adapted from CircuitPython driver for BMP280
 Derived from the work of BadTigrou
 
 Installation and Dependencies

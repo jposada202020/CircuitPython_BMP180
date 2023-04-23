@@ -118,7 +118,7 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
-            "primary": "green",
+            "primary": "purple",
             "accent": "light-blue",
             "toggle": {
                 "icon": "material/lightbulb",
@@ -191,7 +191,7 @@ object_description_options = [
 ]
 
 # Set link name generated in the top bar.
-html_title = "CircuitPython QMC5883L"
+html_title = "CircuitPython BMP180"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

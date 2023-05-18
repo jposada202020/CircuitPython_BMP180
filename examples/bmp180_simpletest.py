@@ -8,7 +8,7 @@ import busio
 import bmp180
 
 i2c = busio.I2C(board.SCL, board.SDA)
-bmp180 = bmp180.BMP180_I2C(i2c)
+bmp180 = bmp180.BMP180(i2c)
 
 # change this to match the location's pressure (hPa) at sea level
 bmp180.sea_level_pressure = 1013.25

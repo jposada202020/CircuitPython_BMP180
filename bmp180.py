@@ -34,19 +34,7 @@ _REGISTER_CHIPID = const(0xD0)
 _REGISTER_SOFTRESET = const(0xE0)
 _REGISTER_CONTROL = const(0xF4)
 _REGISTER_DATA = const(0xF6)
-
-"""calibration coefficients register"""
 _REGISTER_AC1 = const(0xAA)
-_REGISTER_AC2 = const(0xAC)
-_REGISTER_AC3 = const(0xAE)
-_REGISTER_AC4 = const(0xB0)
-_REGISTER_AC5 = const(0xB2)
-_REGISTER_AC6 = const(0xB4)
-_REGISTER_B1 = const(0xB6)
-_REGISTER_B2 = const(0xB8)
-_REGISTER_MB = const(0xBA)
-_REGISTER_MC = const(0xBC)
-_REGISTER_MD = const(0xBE)
 
 _BMP180_PRESSURE_MIN_HPA = const(300)
 _BMP180_PRESSURE_MAX_HPA = const(1100)
@@ -89,18 +77,22 @@ class BMP180:
     _regdata_MSB = UnaryStruct(_REGISTER_DATA, "H")
     _regdata_LSB = UnaryStruct(_REGISTER_DATA + 1, "H")
     _regdata_XLSB = UnaryStruct(_REGISTER_DATA + 2, "H")
-    _register_AC1 = UnaryStruct(_REGISTER_AC1, "H")
 
-    def __init__(self, i2c_bus: I2C, address: int = _I2C_ADDR) -> None:
+    _coeffs = Struct(_REGISTER_AC1, ">hhhHHHhhhhh")
+    _raw_temperature = UnaryStruct(_REGISTER_DATA, ">H")
+
+    def __init__(self, i2c_bus: I2C, address: int = 0x77) -> None:
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
-        print(self._device_id)
+
         if self._device_id != _CHIP_ID:
-            raise RuntimeError("Failed to find BMP180! Chip ID 0x%x" % self._device_id)
+            raise RuntimeError(
+                "Failed to find BMP180! Chip ID {}".format(self._device_id)
+            )
 
         self._oversampling_setting = PRESSURE_OVERSAMPLING_X8
         self._mode = MODE_HIGHRES
 
-        self._read_coefficients()
+        self.coeffs_mem = self._coeffs
 
         self.sea_level_pressure = 1013.25
 
@@ -112,47 +104,50 @@ class BMP180:
     @property
     def temperature(self):
         """The compensated temperature in Celsius."""
-        UT = self._read_raw_temperature()
-        X1 = int(((UT - self._AC6) * self._AC5) >> 15)
-        X2 = int((self._MC << 11) / (X1 + self._MD))
+        self._reg_control = TEMPERATURE_CMD
+        sleep(0.005)  # Wait 5ms
+        UT = self._raw_temperature
+        X1 = int(((UT - self.coeffs_mem[5]) * self.coeffs_mem[4]) >> 15)
+        X2 = int((self.coeffs_mem[9] << 11) / (X1 + self.coeffs_mem[10]))
         B5 = X1 + X2
         temp = ((B5 + 8) >> 4) / 10.0
         return temp
 
-    def _read_raw_temperature(self):
-        self._reg_control = TEMPERATURE_CMD
-        sleep(0.005)  # Wait 5ms
-        return self._readU16(_REGISTER_DATA)
-
     @property
     def altitude(self):
         """The altitude based on the sea level pressure - which you must
-        enter ahead of time)"""
+        enter ahead of time"""
         altitude = 44330.0 * (
-            1.0 - pow(self.pressure / self.sea_level_pressure, 0.1903)
+            1.0 - ((self.pressure / self.sea_level_pressure) ** 0.19025)
         )
         return round(altitude, 1)
+
+    @altitude.setter
+    def altitude(self, value: float) -> None:
+        self.sea_level_pressure = self.pressure / (1.0 - value / 44330.0) ** 5.255
 
     @property
     def pressure(self):
         """The compensated pressure in hectoPascals."""
-        UT = self._read_raw_temperature()
+        self._reg_control = TEMPERATURE_CMD
+        sleep(0.005)  # Wait 5ms
+        UT = self._raw_temperature
         UP = self._read_raw_pressure()
 
-        X1 = int(((UT - self._AC6) * self._AC5) >> 15)
-        X2 = int((self._MC << 11) / (X1 + self._MD))
+        X1 = int(((UT - self.coeffs_mem[5]) * self.coeffs_mem[4]) >> 15)
+        X2 = int((self.coeffs_mem[9] << 11) / (X1 + self.coeffs_mem[10]))
         B5 = X1 + X2
 
         B6 = B5 - 4000
-        X1 = int((self._B2 * (B6 * B6) >> 12) >> 11)
-        X2 = int((self._AC2 * B6) >> 11)
+        X1 = int((self.coeffs_mem[7] * (B6 * B6) >> 12) >> 11)
+        X2 = int((self.coeffs_mem[1] * B6) >> 11)
         X3 = X1 + X2
-        B3 = int((((self._AC1 * 4 + X3) << self._mode) + 2) / 4)
+        B3 = int((((self.coeffs_mem[0] * 4 + X3) << self._mode) + 2) / 4)
 
-        X1 = int((self._AC3 * B6) >> 13)
-        X2 = int((self._B1 * ((B6 * B6) >> 12)) >> 16)
+        X1 = int((self.coeffs_mem[2] * B6) >> 13)
+        X2 = int((self.coeffs_mem[6] * ((B6 * B6) >> 12)) >> 16)
         X3 = int(((X1 + X2) + 2) >> 2)
-        B4 = int((self._AC4 * (X3 + 32768)) >> 15)
+        B4 = int((self.coeffs_mem[3] * (X3 + 32768)) >> 15)
         B7 = int((UP - B3) * (50000 >> self._mode))
 
         if B7 < 0x80000000:
@@ -221,7 +216,7 @@ class BMP180:
     def mode(self, value):
 
         if not value in _BMP180_MODES:
-            raise ValueError("Mode '%s' not supported" % (value))
+            raise ValueError("Mode {} not supported".format(value))
         self._mode = value
 
     @property
@@ -234,44 +229,6 @@ class BMP180:
 
     @oversampling_setting.setter
     def oversampling_setting(self, value):
-        print("oss")
         if not value in _BMP180_PRESSURE_CMD:
-            raise ValueError("Overscan value '%s' not supported" % (value))
+            raise ValueError("Overscan value {} not supported".format(value))
         self._overscan_temperature = value
-
-    def _read_coefficients(self):
-        """Read & save the calibration coefficients"""
-
-        self._AC1 = self._readS16(_REGISTER_AC1)
-        self._AC2 = self._readS16(_REGISTER_AC2)
-        self._AC3 = self._readS16(_REGISTER_AC3)
-        self._AC4 = self._readU16(_REGISTER_AC4)
-        self._AC5 = self._readU16(_REGISTER_AC5)
-        self._AC6 = self._readU16(_REGISTER_AC6)
-        self._B1 = self._readS16(_REGISTER_B1)
-        self._B2 = self._readS16(_REGISTER_B2)
-        self._MB = self._readS16(_REGISTER_MB)
-        self._MC = self._readS16(_REGISTER_MC)
-        self._MD = self._readS16(_REGISTER_MD)
-
-    def _read_byte(self, register):
-        """Read a byte register value and return it"""
-        return self._read_register(register, 1)[0]
-
-    def _readS16(self, register):
-        msb = self._read_byte(register)
-        if msb > 127:
-            msb -= 256
-        return msb * 256 + self._read_byte(register + 1)
-
-    def _readU16(self, register):
-
-        return self._read_byte(register) * 256 + self._read_byte(register + 1)
-
-    def _read_register(self, register, length):
-        """Low level register reading over I2C, returns a list of values"""
-        with self.i2c_device as i2c:
-            i2c.write(bytes([register & 0xFF]))
-            result = bytearray(length)
-            i2c.readinto(result)
-            return result

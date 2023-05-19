@@ -128,10 +128,10 @@ class BMP180:
         self._reg_control = TEMPERATURE_CMD
         sleep(0.005)  # Wait 5ms
         UT = self._raw_temperature
-        X1 = int(((UT - self.coeffs_mem[5]) * self.coeffs_mem[4]) >> 15)
-        X2 = int((self.coeffs_mem[9] << 11) / (X1 + self.coeffs_mem[10]))
+        X1 = ((UT - self.coeffs_mem[5]) * self.coeffs_mem[4]) / 2**15.0
+        X2 = (self.coeffs_mem[9] * 2**11.0) / (X1 + self.coeffs_mem[10])
         B5 = X1 + X2
-        temp = ((B5 + 8) >> 4) / 10.0
+        temp = ((B5 + 8) / 2**4.0) / 10.0
         return temp
 
     @property
@@ -163,32 +163,30 @@ class BMP180:
         UT = self._raw_temperature
         UP = self._read_raw_pressure()
 
-        X1 = int(((UT - self.coeffs_mem[5]) * self.coeffs_mem[4]) >> 15)
-        X2 = int((self.coeffs_mem[9] << 11) / (X1 + self.coeffs_mem[10]))
+        X1 = ((UT - self.coeffs_mem[5]) * self.coeffs_mem[4]) / 2**15.0
+        X2 = (self.coeffs_mem[9] * 2**11.0) / (X1 + self.coeffs_mem[10])
         B5 = X1 + X2
-
         B6 = B5 - 4000
-        X1 = int((self.coeffs_mem[7] * (B6 * B6) >> 12) >> 11)
-        X2 = int((self.coeffs_mem[1] * B6) >> 11)
+        X1 = (self.coeffs_mem[7] * (B6 * B6) / 2**12.0) / 2**11.0
+        X2 = (self.coeffs_mem[1] * B6) / 2**11.0
         X3 = X1 + X2
-        B3 = int((((self.coeffs_mem[0] * 4 + X3) << self._mode) + 2) / 4)
+        B3 = (((self.coeffs_mem[0] * 4 + X3) * 2 ** float(self._mode)) + 2) / 4
+        X1 = (self.coeffs_mem[2] * B6) / 2**13.0
+        X2 = (self.coeffs_mem[6] * ((B6 * B6) / 2**12.0)) / 2**16.0
+        X3 = ((X1 + X2) + 2) / 2**2.0
+        B4 = (self.coeffs_mem[3] * (X3 + 32768.0)) / 2**15.0
+        B7 = (UP - B3) * (50000 / 2 ** float(self._mode))
 
-        X1 = int((self.coeffs_mem[2] * B6) >> 13)
-        X2 = int((self.coeffs_mem[6] * ((B6 * B6) >> 12)) >> 16)
-        X3 = int(((X1 + X2) + 2) >> 2)
-        B4 = int((self.coeffs_mem[3] * (X3 + 32768)) >> 15)
-        B7 = int((UP - B3) * (50000 >> self._mode))
-
-        if B7 < 0x80000000:
-            press = int((B7 * 2) / B4)
+        if B7 < 2147483648.0:
+            press = (B7 * 2) / B4
         else:
-            press = int((B7 / B4) * 2)
+            press = (B7 / B4) * 2
 
-        X1 = int((press >> 8) * (press >> 8))
-        X1 = int((X1 * 3038) >> 16)
-        X2 = int((-7357 * press) >> 16)
+        X1 = (press / 2**8.0) * (press / 2**8.0)
+        X1 = (X1 * 3038) / 2**16.0
+        X2 = (-7357 * press) / 2**16.0
 
-        return int(press + ((X1 + X2 + 3791) >> 4)) / 100
+        return (press + ((X1 + X2 + 3791) / 2**4.0)) / 100
 
     def _read_raw_pressure(self):
 

@@ -22,7 +22,7 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-CircuitPython driver from BMP180 Temperature and Barometric Pressure sensor adapted from CircuitPython driver for BMP280
+CircuitPython driver from BMP180 Temperature and Barometric Pressure sensor
 Derived from the work of BadTigrou
 
 Installation and Dependencies

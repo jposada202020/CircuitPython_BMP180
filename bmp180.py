@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 """
-`bmp180` - Temperature & Barometic Pressure Sensor
+`bmp180` - Temperature & Barometric Pressure Sensor
 ===============================================================================
 
-CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor
+CircuitPython driver from BMP180 Temperature and Barometric Pressure sensor
 
 * Author(s): BadTigrou, Jose D. Montoya
 """
@@ -34,10 +34,6 @@ _REGISTER_CONTROL = const(0xF4)
 _REGISTER_DATA = const(0xF6)
 _REGISTER_AC1 = const(0xAA)
 
-_BMP180_PRESSURE_MIN_HPA = const(300)
-_BMP180_PRESSURE_MAX_HPA = const(1100)
-
-
 """oversampling values for temperature, pressure, and humidity"""
 TEMPERATURE_CMD = const(0x2E)
 PRESSURE_OVERSAMPLING_X1 = const(0x01)
@@ -51,7 +47,6 @@ _BMP180_PRESSURE_CMD = {
     PRESSURE_OVERSAMPLING_X4: 0xB4,
     PRESSURE_OVERSAMPLING_X8: 0xF4,
 }
-
 
 """mode values"""
 MODE_ULTRALOWPOWER = const(0x00)
@@ -89,9 +84,7 @@ class BMP180:
 
         self._oversampling_setting = PRESSURE_OVERSAMPLING_X8
         self._mode = MODE_HIGHRES
-
         self.coeffs_mem = self._coeffs
-
         self.sea_level_pressure = 1013.25
 
     def _reset(self):
@@ -213,7 +206,7 @@ class BMP180:
     @mode.setter
     def mode(self, value):
 
-        if not value in _BMP180_MODES:
+        if value not in _BMP180_MODES:
             raise ValueError("Mode {} not supported".format(value))
         self._mode = value
 
@@ -229,4 +222,4 @@ class BMP180:
     def oversampling_setting(self, value):
         if not value in _BMP180_PRESSURE_CMD:
             raise ValueError("Overscan value {} not supported".format(value))
-        self._overscan_temperature = value
+        self._oversampling_setting = value

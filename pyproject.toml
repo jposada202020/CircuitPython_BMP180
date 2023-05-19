@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: 2022 Alec Delaney, written for Adafruit Industries
 # SPDX-FileCopyrightText: Copyright (c) 2023 Jose D. Montoya
 #
 # SPDX-License-Identifier: MIT
@@ -18,7 +17,7 @@ readme = "README.rst"
 authors = [
     {name = "Jose D. Montoya", email = "qmc@mailmeto.mozmail.com"}
 ]
-urls = {Homepage = "https://github.com/jposada202020/CircuitPython_bmp180"}
+urls = {Homepage = "https://github.com/jposada202020/CircuitPython_BMP180"}
 keywords = [
     "adafruit",
     "blinka",

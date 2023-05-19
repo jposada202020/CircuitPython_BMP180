@@ -4,17 +4,16 @@
 
 import time
 import board
-import busio
 import bmp180
 
-i2c = busio.I2C(board.SCL, board.SDA)
-bmp180 = bmp180.BMP180(i2c)
+i2c = board.I2C()
+bmp = bmp180.BMP180(i2c)
 
 # change this to match the location's pressure (hPa) at sea level
-bmp180.sea_level_pressure = 1013.25
+bmp.sea_level_pressure = 1013.25
 
 while True:
-    print("\nTemperature: %0.1f C" % bmp180.temperature)
-    print("Pressure: %0.1f hPa" % bmp180.pressure)
-    print("Altitude = %0.2f meters" % bmp180.altitude)
+    print("\nTemperature: %0.1f C" % bmp.temperature)
+    print("Pressure: %0.1f hPa" % bmp.pressure)
+    print("Altitude = %0.2f meters" % bmp.altitude)
     time.sleep(2)

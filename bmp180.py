@@ -10,17 +10,15 @@ CircuitPython driver from BMP180 Temperature and Barometic Pressure sensor
 
 * Author(s): BadTigrou, Jose D. Montoya
 """
-# pylint: disable=consider-using-from-import, import-outside-toplevel, unused-import
+
 
 from time import sleep
 from micropython import const
 from adafruit_register.i2c_struct import ROUnaryStruct, UnaryStruct, Struct
-import adafruit_bus_device.i2c_device as i2c_device
+from adafruit_bus_device import i2c_device
 
 try:
     from busio import I2C
-    from typing_extensions import NoReturn
-    import struct
 except ImportError:
     pass
 
@@ -63,7 +61,7 @@ MODE_ULTRAHIGHRES = const(0x03)
 
 _BMP180_MODES = (MODE_ULTRALOWPOWER, MODE_STANDARD, MODE_HIGHRES, MODE_ULTRAHIGHRES)
 
-# pylint: disable=invalid-name, too-many-instance-attributes, too-few-public-methods
+# pylint: disable=invalid-name
 
 
 class BMP180:

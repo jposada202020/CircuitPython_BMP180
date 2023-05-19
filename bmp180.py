@@ -56,13 +56,40 @@ MODE_ULTRAHIGHRES = const(0x03)
 
 _BMP180_MODES = (MODE_ULTRALOWPOWER, MODE_STANDARD, MODE_HIGHRES, MODE_ULTRAHIGHRES)
 
-# pylint: disable=invalid-name
-
 
 class BMP180:
-    """Base BMP180 object. Use :class:`BMP180_I2C`  instead of this. This
-    checks the BMP180 was found, reads the coefficients and enables the sensor for continuous
-    reads"""
+    """Driver for the BMP180 Sensor connected over I2C.
+
+    :param ~busio.I2C i2c_bus: The I2C bus the BMP180 is connected to.
+    :param int address: The I2C device address. Defaults to :const:`0x77`
+
+    :raises RuntimeError: if the sensor is not found
+
+    **Quickstart: Importing and using the device**
+
+    Here is an example of using the :class:`BMP180` class.
+    First you will need to import the libraries to use the sensor
+
+    .. code-block:: python
+
+        import board
+        import bmp180
+
+    Once this is done you can define your `board.I2C` object and define your sensor object
+
+    .. code-block:: python
+
+        i2c = board.I2C()  # uses board.SCL and board.SDA
+        bmp = bmp180.BMP180(i2c)
+
+    Now you have access to the attributes
+
+    .. code-block:: python
+
+        press = bmp.pressure
+        temp = bmp.temperature
+
+    """
 
     _device_id = ROUnaryStruct(_REGISTER_CHIPID, "H")
     _reg_control = UnaryStruct(_REGISTER_CONTROL, "H")
@@ -142,15 +169,15 @@ class BMP180:
         B7 = int((UP - B3) * (50000 >> self._mode))
 
         if B7 < 0x80000000:
-            p = int((B7 * 2) / B4)
+            press = int((B7 * 2) / B4)
         else:
-            p = int((B7 / B4) * 2)
+            press = int((B7 / B4) * 2)
 
-        X1 = int((p >> 8) * (p >> 8))
+        X1 = int((press >> 8) * (press >> 8))
         X1 = int((X1 * 3038) >> 16)
-        X2 = int((-7357 * p) >> 16)
+        X2 = int((-7357 * press) >> 16)
 
-        return int(p + ((X1 + X2 + 3791) >> 4)) / 100
+        return int(press + ((X1 + X2 + 3791) >> 4)) / 100
 
     def _read_raw_pressure(self):
 

@@ -278,7 +278,7 @@ function-rgx=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$
 
 # Good variable names which should always be accepted, separated by a comma
 # good-names=i,j,k,ex,Run,_
-good-names=r,g,b,w,i,j,k,n,x,y,z,ex,ok,Run,_
+good-names=r,g,b,w,i,j,k,n,x,y,z,ex,ok,Run,_,X1,X2,X3,X4,UT,UP,B1,B2,B3,B4,B5,B6,B7
 
 # Include a hint for the correct naming format with invalid-name
 include-naming-hint=no

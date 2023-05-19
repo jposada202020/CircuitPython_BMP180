@@ -121,7 +121,10 @@ class BMP180:
 
     @property
     def temperature(self):
-        """The compensated temperature in Celsius."""
+        """
+        The compensated temperature in Celsius.
+        Calculation of true temperature in steps of 0.1°C.
+        """
         self._reg_control = TEMPERATURE_CMD
         sleep(0.005)  # Wait 5ms
         UT = self._raw_temperature
@@ -133,8 +136,13 @@ class BMP180:
 
     @property
     def altitude(self):
-        """The altitude based on the sea level pressure - which you must
-        enter ahead of time"""
+        """
+        With the measured pressure p and the pressure at sea level p0 e.g. 1013.25hPa,
+        the altitude in meters can be calculated with the international barometric formula
+
+        With the measured pressure p and the absolute altitude the pressure at sea level
+        can be calculated too. See the altitude setter for this calculation
+        """
         altitude = 44330.0 * (
             1.0 - ((self.pressure / self.sea_level_pressure) ** 0.19025)
         )
@@ -146,7 +154,10 @@ class BMP180:
 
     @property
     def pressure(self):
-        """The compensated pressure in hectoPascals."""
+        """
+        The compensated pressure in hectoPascals.
+        Calculation of true  pressure in steps of 1Pa (= 0.01hPa = 0.01mbar)
+        """
         self._reg_control = TEMPERATURE_CMD
         sleep(0.005)  # Wait 5ms
         UT = self._raw_temperature
@@ -202,7 +213,6 @@ class BMP180:
     def mode(self):
         """
         Operation mode
-        Allowed values are set in the MODE enum class
 
         +----------------------------------------+-------------------------+
         | Mode                                   | Value                   |

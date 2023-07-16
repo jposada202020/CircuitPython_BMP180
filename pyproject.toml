@@ -19,10 +19,8 @@ authors = [
 ]
 urls = {Homepage = "https://github.com/jposada202020/CircuitPython_BMP180"}
 keywords = [
-    "adafruit",
     "blinka",
     "circuitpython",
-    "micropython",
     "bmp180",
     "barometric",
     "pressure",

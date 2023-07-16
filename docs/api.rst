@@ -1,5 +1,5 @@
-BMP180 Library
-================
+CircuitPython BMP180 Library
+==============================
 
 
 .. automodule:: bmp180

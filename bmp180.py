@@ -105,9 +105,7 @@ class BMP180:
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
 
         if self._device_id != _CHIP_ID:
-            raise RuntimeError(
-                "Failed to find BMP180! Chip ID {}".format(self._device_id)
-            )
+            raise RuntimeError(f"Failed to find BMP180! Chip ID {self._device_id}")
 
         self._oversampling_setting = PRESSURE_OVERSAMPLING_X8
         self._mode = MODE_HIGHRES
@@ -175,7 +173,7 @@ class BMP180:
         X2 = (self.coeffs_mem[6] * ((B6 * B6) / 2**12.0)) / 2**16.0
         X3 = ((X1 + X2) + 2) / 2**2.0
         B4 = (self.coeffs_mem[3] * (X3 + 32768.0)) / 2**15.0
-        B7 = (UP - B3) * (50000 / 2 ** float(self._mode))
+        B7 = (UP - B3) * (50000.0 / 2 ** float(self._mode))
 
         if B7 < 2147483648.0:
             press = (B7 * 2) / B4
@@ -189,7 +187,6 @@ class BMP180:
         return (press + ((X1 + X2 + 3791) / 2**4.0)) / 100
 
     def _read_raw_pressure(self):
-
         self._reg_control = _BMP180_PRESSURE_CMD[self._mode]
 
         if self._mode == PRESSURE_OVERSAMPLING_X8:
@@ -240,9 +237,8 @@ class BMP180:
 
     @mode.setter
     def mode(self, value):
-
         if value not in _BMP180_MODES:
-            raise ValueError("Mode {} not supported".format(value))
+            raise ValueError(f"Mode {value} not supported")
         self._mode = value
 
     @property
@@ -256,5 +252,5 @@ class BMP180:
     @oversampling_setting.setter
     def oversampling_setting(self, value):
         if not value in _BMP180_PRESSURE_CMD:
-            raise ValueError("Overscan value {} not supported".format(value))
+            raise ValueError(f"Overscan value {value} not supported")
         self._oversampling_setting = value

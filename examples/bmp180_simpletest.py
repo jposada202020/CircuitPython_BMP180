@@ -13,7 +13,8 @@ bmp = bmp180.BMP180(i2c)
 bmp.sea_level_pressure = 1013.25
 
 while True:
-    print("\nTemperature: %0.1f C" % bmp.temperature)
-    print("Pressure: %0.1f hPa" % bmp.pressure)
-    print("Altitude = %0.2f meters" % bmp.altitude)
+    print(f"Temperature: {bmp.temperature:.1f} °C")
+    print(f"Pressure: {bmp.pressure:.1f} hPa")
+    print(f"Altitude: {bmp.altitude:.1f} mts")
+    print("")
     time.sleep(2)

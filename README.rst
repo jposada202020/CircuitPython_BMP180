@@ -65,4 +65,4 @@ Take a look a the ``bmp180_simpletest.py`` in the examples directory
 
 Documentation
 =============
-API documentation for this library can be found on `Read the Docs <https://circuitpython-qmc5883l.readthedocs.io/>`_.
+API documentation for this library can be found on `Read the Docs <https://circuitpython-bmp180.readthedocs.io/>`_.
